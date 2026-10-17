@@ -15,6 +15,8 @@ const ROTAS = [
   { id: 'programas', rotulo: 'Programas', celular: false, desktop: true, admin: true },
   { id: 'planilha', rotulo: 'Planilha', celular: false, desktop: true, admin: true },
   { id: 'biblioteca', rotulo: 'Biblioteca', celular: false, desktop: true, admin: true },
+  // Telas sem aba própria (acendem a aba "pai")
+  { id: 'treino', oculta: true, pai: 'hoje' },
 ];
 const INICIAL = 'hoje';
 
@@ -27,7 +29,7 @@ function rotasPermitidas() {
 }
 
 function desenharNav() {
-  const rotas = rotasPermitidas();
+  const rotas = rotasPermitidas().filter((r) => !r.oculta);
   const item = (r) => {
     const classe = r.celular && !r.desktop ? 'so-celular' : !r.celular && r.desktop ? 'so-desktop' : '';
     return `<a class="nav-item ${classe}" href="#/${r.id}" data-rota="${r.id}">${icone(r.id)}<span class="rotulo">${r.rotulo}</span></a>`;
@@ -49,7 +51,7 @@ async function mostrar(id, params, busca) {
   const minha = ++versao;
   const rota = ROTAS.find((r) => r.id === id);
   for (const a of nav.querySelectorAll('.nav-item')) {
-    const acesa = a.dataset.rota === id || (a.dataset.rota === 'gestao' && rota?.admin);
+    const acesa = a.dataset.rota === id || a.dataset.rota === rota?.pai || (a.dataset.rota === 'gestao' && rota?.admin);
     if (acesa) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
   }

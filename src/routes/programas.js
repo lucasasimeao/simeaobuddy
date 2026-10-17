@@ -115,11 +115,17 @@ export function rotasProgramas(db) {
     devolver(res, pid);
   });
 
-  // DECIDIR: na Etapa 4, bloquear apagar treino/item que já tem séries registradas (hoje só existe a estrutura)
+  // Treino ou exercício com séries registradas não pode ser apagado (o histórico depende dele)
+  const temHistoricoSessao = (sid) => db.prepare('SELECT 1 FROM treinos_realizados WHERE sessao_id = ? LIMIT 1').get(sid);
+  const temHistoricoItem = (iid) => db.prepare('SELECT 1 FROM series_realizadas WHERE item_id = ? LIMIT 1').get(iid)
+    || db.prepare('SELECT 1 FROM trocas_treino WHERE item_id = ? LIMIT 1').get(iid);
+  const MSG_HISTORICO = 'Já tem treino registrado aqui, então não dá para apagar. Para mudar, crie um programa novo (copie este).';
+
   r.delete('/sessoes/:sid', exigirAdmin, (req, res) => {
     const sid = Number(req.params.sid);
     const pid = programaDaSessao(sid);
     if (!pid) return res.status(404).json({ erro: 'Treino não encontrado.' });
+    if (temHistoricoSessao(sid)) return res.status(409).json({ erro: MSG_HISTORICO });
     db.exec('BEGIN');
     db.prepare('DELETE FROM itens_semana WHERE item_id IN (SELECT id FROM itens_sessao WHERE sessao_id = ?)').run(sid);
     db.prepare('DELETE FROM itens_sessao WHERE sessao_id = ?').run(sid);
@@ -165,6 +171,7 @@ export function rotasProgramas(db) {
     const iid = Number(req.params.iid);
     const pid = programaDoItem(iid);
     if (!pid) return res.status(404).json({ erro: 'Exercício do treino não encontrado.' });
+    if (temHistoricoItem(iid)) return res.status(409).json({ erro: MSG_HISTORICO });
     db.exec('BEGIN');
     db.prepare('DELETE FROM itens_semana WHERE item_id = ?').run(iid);
     db.prepare('DELETE FROM itens_sessao WHERE id = ?').run(iid);

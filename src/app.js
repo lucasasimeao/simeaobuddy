@@ -8,8 +8,10 @@ import { rotasAuth } from './routes/auth.js';
 import { rotasAlunos } from './routes/alunos.js';
 import { rotasExercicios } from './routes/exercicios.js';
 import { rotasProgramas } from './routes/programas.js';
+import { rotasTreinos } from './routes/treinos.js';
 
 const PUBLICO = join(dirname(fileURLToPath(import.meta.url)), '..', 'public');
+const REGRAS = join(dirname(fileURLToPath(import.meta.url)), 'treino');
 
 // opcoes.trocarCodigo: troca o código do Google (os testes passam um falso)
 export function criarApp(db, opcoes = {}) {
@@ -24,11 +26,14 @@ export function criarApp(db, opcoes = {}) {
   app.use('/api/alunos', rotasAlunos(db));
   app.use('/api/exercicios', rotasExercicios(db));
   app.use('/api/programas', rotasProgramas(db));
+  app.use('/api/treinos', rotasTreinos(db));
 
   // Rota de API que não existe → erro em JSON
   app.use('/api', (req, res) => res.status(404).json({ erro: 'Rota não encontrada.' }));
 
   app.use(express.static(PUBLICO));
+  // As regras de treino (funções puras) também rodam no navegador: a mesma fonte, sem copiar código
+  app.use('/js/treino', express.static(REGRAS));
 
   // Erro inesperado → mensagem amigável
   app.use((erro, req, res, next) => {

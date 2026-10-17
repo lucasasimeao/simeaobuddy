@@ -15,6 +15,7 @@ const P = {
   'seta-cima': '<path d="m18 15-6-6-6 6"/>',
   'seta-baixo': '<path d="m6 9 6 6 6-6"/>',
   mais: '<path d="M5 12h14"/><path d="M12 5v14"/>',
+  trocar: '<path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/>',
   busca: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
   fechar: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
   sair: '<path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>',

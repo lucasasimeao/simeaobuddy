@@ -221,3 +221,26 @@ export function validarSemana(s = {}) {
   if (dados.n_bo > 0 && dados.n_top === 0) return { erro: 'O back-off vem depois do TOP: coloque 1 TOP.' };
   return { dados };
 }
+
+// --- Séries registradas ---
+// O tipo vem do plano (posição na semana), não do celular: a 3ª série de "2 WS + 1 BO" é sempre BO.
+export function validarSerie(s = {}, item) {
+  const mr = item.metodo === 'muscle_round';
+  const planejadas = item.semana?.series || [];
+  const posicao = Number(s.posicao);
+  if (!Number.isInteger(posicao) || posicao < 0 || posicao >= planejadas.length) return { erro: 'Essa série não existe nesta semana.' };
+  const tipo = planejadas[posicao].tipo;
+  let bloco = 0;
+  if (mr) {
+    bloco = Number(s.bloco);
+    if (!Number.isInteger(bloco) || bloco < 1 || bloco > (item.mr_blocos || 4)) return { erro: 'Bloco do Muscle Round inválido.' };
+  }
+  const carga = numero(s.carga, 0, 1000, 'Carga (kg)');
+  if (carga.erro || carga.valor === null) return { erro: carga.erro || 'Informe a carga (kg).' };
+  const reps = numero(s.reps, 0, 100, 'Reps', true);
+  if (reps.erro || reps.valor === null) return { erro: reps.erro || 'Informe as reps.' };
+  const rir = numero(s.rir, 0, 10, 'RIR', true);
+  if (rir.erro) return { erro: rir.erro };
+  const uuid = vazio(s.uuid) ? null : String(s.uuid).slice(0, 64);
+  return { dados: { posicao, bloco, tipo, carga: carga.valor, reps: reps.valor, rir: rir.valor, uuid } };
+}

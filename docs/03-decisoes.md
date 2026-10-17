@@ -12,6 +12,7 @@
    Demais exercícios de superiores: 2 → 2 → 2 WS + 1 BO. Inferiores e abdômen: 2 → 2 → 2 WS. As exceções do PDF ficam como estão no modelo, mas tudo é editável por exercício.
    Exceções do PDF no modelo (confirmado em 17/10/2026): Crucifixo polia baixa, Remada baixa unilateral neutra e Crucifixo máquina = 2 → 3 → 2 WS + 1 BO; T-bar row = 2 → 3 → 2 WS + 1 BO.
 3. **Depois da semana 3:** repetir o bloco com as cargas novas. Deload só quando a análise der fadiga alta: a semana 4 fica opcional, com 50% das séries, RIR 3 a 4 e a mesma carga.
+   **Treino do dia (17/10/2026):** pela sequência: o próximo que falta no microciclo atual (A → B → C → D → E); fechou os 5, começa o microciclo seguinte. Dá para escolher outro treino na hora.
 4. **Séries válidas e RIR:** "2 WS" = 1 série com RIR 1 + 1 TOP com RIR 0 (como nas fichas). Mesa flexora e búlgaro: só 1 série válida (TOP).
 5. **Muscle Round:** 4 blocos de 4 reps com a mesma carga e 10 s entre os blocos; registra a carga e as reps de cada bloco. Na escada, é **1 Muscle Round fixo nas 3 semanas** (sem WS nem BO) e conta como 1 série no contador por músculo.
 6. **Back-off:** −20% da carga do top set (arredondada ao incremento do aparelho), na mesma faixa de reps, RIR 0 a 1.

@@ -1,6 +1,8 @@
 // Planilha (admin): recria a "PLANILHA AVANÇADO". #/planilha/7 → abas por treino (um bloco por microciclo) + Escada.
-// Etapa 3: só a estrutura. Os kg e reps realizados entram na Etapa 4.
+// Os kg e reps vêm dos treinos registrados; tonelagem e carga pelas regras de src/treino/.
 import { api } from '../api.js';
+import { tonelagem, totalReps, cargaUtilizada } from '/js/treino/tonelagem.js';
+import { semanaDaEscada } from '/js/treino/sequencia.js';
 import { icone } from '../icones.js';
 import { esc } from '../componentes.js';
 import { faixa, segundos, etiqueta, editarSemana } from '../programa-ui.js';
@@ -19,6 +21,7 @@ export async function render(el, params) {
     return;
   }
   let dados = await api(`/programas/${escolhido}`);
+  const { treinos } = await api(`/treinos/planilha/${escolhido}`);
   let aba = params[1] || String(dados.sessoes[0]?.id || 'escada');
 
   function desenhar() {
@@ -65,8 +68,10 @@ export async function render(el, params) {
         <tr>${Array.from({ length: MAX_SERIES }, () => '<th>Reps</th><th>Kg</th>').join('')}</tr>
       </thead>`;
 
-    const linha = (item, k, m) => {
-      const w = item.semanas.find((x) => x.microciclo === m);
+    const linha = (item, k, m, treino) => {
+      const w = item.semanas.find((x) => x.microciclo === semanaDaEscada(m, n));
+      const feitas = treino ? treino.series.filter((x) => x.item_id === item.id) : [];
+      const celula = (j) => (item.metodo === 'muscle_round' ? feitas.find((x) => x.bloco === j + 1) : feitas.find((x) => x.posicao === j));
       const mr = item.metodo === 'muscle_round';
       // Muscle Round: cada bloco ocupa uma "série" da planilha
       const series = mr ? Array.from({ length: item.mr_blocos || 4 }, () => ({ tipo: 'muscle_round' })) : (w?.series || []);
@@ -78,22 +83,33 @@ export async function render(el, params) {
         <td>${mr ? '—' : w?.n_ws ?? 0}</td><td>${mr ? '—' : faixa(item)}</td><td>${w?.n_ws ? w.rir_ws : '—'}</td>
         <td>${mr ? `${w?.n_mr ?? 0} MR` : w?.n_top ?? 0}${w?.n_bo ? ` + ${w.n_bo} BO` : ''}</td>
         <td>${faixa(item)}</td><td>${w?.n_top ? w.rir_top : '—'}</td><td>${segundos(item.descanso_seg)}</td>
-        ${Array.from({ length: MAX_SERIES }, (_, j) => series[j]
-          ? `<td class="vazia">${etiqueta(series[j].tipo)}</td><td class="vazia"></td>`
-          : '<td class="sem"></td><td class="sem"></td>').join('')}
-        <td>—</td><td>—</td><td>—</td>
+        ${Array.from({ length: MAX_SERIES }, (_, j) => {
+          const f = celula(j);
+          if (f) return `<td class="feita-cel" title="${f.tipo.toUpperCase()}">${f.reps}</td><td class="feita-cel">${String(f.carga).replace('.', ',')}</td>`;
+          return series[j] ? `<td class="vazia">${etiqueta(series[j].tipo)}</td><td class="vazia"></td>` : '<td class="sem"></td><td class="sem"></td>';
+        }).join('')}
+        <td>${feitas.length ? totalReps(feitas) : '—'}</td>
+        <td>${feitas.length && cargaUtilizada(feitas) != null ? String(cargaUtilizada(feitas)).replace('.', ',') : '—'}</td>
+        <td><b>${feitas.length ? Math.round(tonelagem(feitas)).toLocaleString('pt-BR') : '—'}</b></td>
       </tr>`;
     };
 
-    return Array.from({ length: n }, (_, i) => i + 1).map((m) => `
+    const daSessao = treinos.filter((t) => t.sessao_id === sessao.id);
+    const nBlocos = Math.max(n, ...daSessao.map((t) => t.microciclo));
+    return Array.from({ length: nBlocos }, (_, i) => i + 1).map((m) => {
+      const treino = daSessao.filter((t) => t.microciclo === m).at(-1);
+      const total = treino ? tonelagem(treino.series) : null;
+      return `
       <section class="card bloco">
-        <h2>Treino ${esc(sessao.codigo)} · ${esc(sessao.nome)} – Micro ${m}</h2>
+        <h2>Treino ${esc(sessao.codigo)} · ${esc(sessao.nome)} – Micro ${m}
+          <small class="sub">${treino ? `${treino.data.split('-').reverse().join('/')}${treino.status === 'em_andamento' ? ' · em andamento' : ''} · ${Math.round(total).toLocaleString('pt-BR')} kg` : `semana ${semanaDaEscada(m, n)} da escada · não executado`}</small></h2>
         <div class="tabela-rolavel"><table class="tabela planilha num">
           ${cab}
-          <tbody>${sessao.itens.map((item, k) => linha(item, k, m)).join('')}</tbody>
+          <tbody>${sessao.itens.map((item, k) => linha(item, k, m, treino)).join('')}</tbody>
         </table></div>
-        <p class="dica">Observações sobre o treino: —</p>
-      </section>`).join('');
+        <p class="dica">Observações sobre o treino: ${treino?.observacao ? esc(treino.observacao) : '—'}</p>
+      </section>`;
+    }).join('');
   }
 
   // Visão "volume em escada": semanas × exercícios, editável (toque na célula)
