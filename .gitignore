@@ -1,0 +1,11 @@
+node_modules/
+
+# Banco real e fotos: nunca vão para o git (backup é separado)
+data/
+
+.env
+*.log
+.DS_Store
+Thumbs.db
+logs/
+public/icone.ico
