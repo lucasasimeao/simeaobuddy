@@ -21,8 +21,10 @@
 ## App
 
 10. **Amigos:** usam o mesmo método. Só o Lucas (admin) monta e edita as fichas; o aluno registra e vê só os próprios dados.
-11. **Login:** nome + PIN de 4 dígitos.
-12. **Hospedagem:** decidir na Etapa 8. Até lá, roda no PC e o celular acessa pela mesma rede Wi-Fi.
+11. **Login (mudou em 17/10/2026):** o admin (só o Lucas) entra com **usuário + senha** (usuário `lucasimeao`). Os alunos entram com a **conta Google**.
+    Qualquer pessoa pode se cadastrar pelo Google, mas fica **aguardando aprovação** até o Lucas liberar na tela Alunos. Não existe PIN.
+    Só existe um admin. Só o admin edita fichas e anamneses; o aluno registra os treinos e vê só os próprios dados.
+12. **Hospedagem:** o app roda no PC do Lucas e fica acessível por um link https fixo do **Tailscale Funnel** (adiantado da Etapa 8, porque o login do Google exige https). A Etapa 8 reavalia (VPS etc.) se precisar.
 13. **Corpo:** peso diário + medidas quinzenais (cintura, peito, braço, coxa, quadril, panturrilha). Fotos e % de gordura opcionais.
 14. **Dieta:** fora da v1 (só peso e medidas).
 15. **Nome do app:** "SIMEAOBuddy".

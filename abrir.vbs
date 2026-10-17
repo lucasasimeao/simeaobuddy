@@ -11,7 +11,7 @@ sh.CurrentDirectory = pasta
 If Not fso.FolderExists(pasta & "\logs") Then fso.CreateFolder(pasta & "\logs")
 
 If Not Rodando() Then
-  sh.Run "cmd /c node --disable-warning=ExperimentalWarning server.js >> logs\servidor.log 2>&1", 0, False
+  sh.Run "cmd /c node --env-file-if-exists=.env --disable-warning=ExperimentalWarning server.js >> logs\servidor.log 2>&1", 0, False
   For i = 1 To 30
     WScript.Sleep 500
     If Rodando() Then Exit For

@@ -27,7 +27,8 @@ Em caso de conflito, vale a ordem abaixo:
 - Frontend: HTML + CSS + JavaScript puro (ES modules), **sem build**, SPA com rotas por hash, servido pelo Express.
 - PWA: manifest + service worker + IndexedDB (ficha do dia e fila offline de séries).
 - Chart.js (gráficos), ExcelJS (exportar .xlsx), ícones Lucide em SVG inline.
-- Login: nome + PIN (hash com `crypto.scrypt`), cookie httpOnly. Papéis `admin` e `aluno`.
+- Login: admin único com usuário + senha (hash com `crypto.scrypt`); alunos com **Google** (OAuth sem bibliotecas, `src/auth/google.js`), cadastro fica `pendente` até o admin aprovar. Sessão em cookie httpOnly. Papéis `admin` e `aluno`. Segredos no `.env` (fora do git).
+- Acesso externo: **Tailscale Funnel** (link https fixo para a porta 3100). Ver `DEPLOY.md`.
 - Proibido sem pedir: React, TypeScript, bundlers, Docker, banco externo, CSS framework.
 
 ## Organização
@@ -53,6 +54,7 @@ Detalhes em `docs/05` §Visual.
 ## Comandos
 - `iniciar.bat` (duplo clique): instala o que faltar, sobe o servidor e abre o navegador.
 - Ícone **SIMEAOBuddy** na área de trabalho (`abrir.vbs`): liga o servidor escondido, se estiver desligado, e abre o app. O servidor também liga sozinho com o Windows (atalho na pasta Inicializar). Log em `logs/servidor.log`.
+- `npm run criar-admin -- <usuario> "<nome>"` com a senha em `$env:SENHA`: cria/troca a senha do admin.
 - `instalar-atalhos.ps1`: cria os dois atalhos (`-Remover` tira). `parar.bat`: desliga o servidor escondido (necessário antes de atualizar o código).
 - `npm start`: sobe o servidor (porta 3100). Mostra o endereço para abrir no celular.
 - `npm test`: roda os testes (`node --test`, pasta `test/`).

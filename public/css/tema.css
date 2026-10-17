@@ -23,6 +23,11 @@
   --ok: #22C55E;
   --atencao: #EAB308;
   --erro: #EF4444;
+  --erro-suave: rgb(239 68 68 / 0.12);
+
+  /* Botão do Google (regras da marca: fundo branco) */
+  --google-fundo: #FFFFFF;
+  --google-texto: #1F1F1F;
 
   /* Tipografia */
   --fonte: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
