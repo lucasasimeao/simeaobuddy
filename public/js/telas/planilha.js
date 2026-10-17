@@ -1,7 +1,120 @@
-import { emBreve } from '../componentes.js';
+// Planilha (admin): recria a "PLANILHA AVANÇADO". #/planilha/7 → abas por treino (um bloco por microciclo) + Escada.
+// Etapa 3: só a estrutura. Os kg e reps realizados entram na Etapa 4.
+import { api } from '../api.js';
+import { icone } from '../icones.js';
+import { esc } from '../componentes.js';
+import { faixa, segundos, etiqueta, editarSemana } from '../programa-ui.js';
 
 export const titulo = 'Planilha';
 export const larga = true;
-export function render(el) {
-  el.innerHTML = emBreve({ icone: 'planilha', titulo: 'Planilha', etapa: '3', texto: 'A PLANILHA AVANÇADO dentro do app, uma aba por treino.' });
+
+const MAX_SERIES = 5;
+
+export async function render(el, params) {
+  const { programas } = await api('/programas');
+  const comPessoa = programas.filter((p) => p.aluno_id);
+  const escolhido = Number(params[0]) || (comPessoa.find((p) => p.status === 'ativo') || programas[0])?.id;
+  if (!escolhido) {
+    el.innerHTML = '<section class="card vazio"><p>Nenhum programa ainda. Crie um em Programas.</p></section>';
+    return;
+  }
+  let dados = await api(`/programas/${escolhido}`);
+  let aba = params[1] || String(dados.sessoes[0]?.id || 'escada');
+
+  function desenhar() {
+    const { programa, sessoes } = dados;
+    const sessao = sessoes.find((s) => String(s.id) === aba);
+    el.innerHTML = `
+      <div class="filtros">
+        <select id="programa" aria-label="Programa">
+          ${programas.map((p) => `<option value="${p.id}" ${p.id === programa.id ? 'selected' : ''}>
+            ${esc(p.aluno_id ? `${p.aluno_nome} · ${p.nome}${p.status === 'ativo' ? '' : ` (${p.status})`}` : `Modelo · ${p.nome}`)}</option>`).join('')}
+        </select>
+        <a class="botao" href="#/programas/${programa.id}">${icone('programas')}<span class="so-desktop-inline">Editar</span></a>
+      </div>
+      <div class="segmentos rolar" role="tablist">
+        ${sessoes.map((s) => `<button role="tab" data-aba="${s.id}" aria-selected="${String(s.id) === aba}">Treino ${esc(s.codigo)}</button>`).join('')}
+        <button role="tab" data-aba="escada" aria-selected="${aba === 'escada'}">Escada</button>
+      </div>
+      ${aba === 'escada' ? escada() : sessao ? blocos(sessao) : ''}`;
+
+    el.querySelector('#programa').addEventListener('change', (ev) => { location.hash = `#/planilha/${ev.target.value}`; });
+    for (const b of el.querySelectorAll('[data-aba]')) b.addEventListener('click', () => { aba = b.dataset.aba; desenhar(); });
+    for (const b of el.querySelectorAll('[data-celula]')) {
+      b.addEventListener('click', async () => {
+        const [itemId, semana] = b.dataset.celula.split(':').map(Number);
+        const item = dados.sessoes.flatMap((s) => s.itens).find((i) => i.id === itemId);
+        const novo = await editarSemana(item, semana, dados.programa.n_microciclos);
+        if (novo) { dados = novo; desenhar(); }
+      });
+    }
+  }
+
+  // Um bloco por microciclo, com as colunas da planilha
+  function blocos(sessao) {
+    const n = dados.programa.n_microciclos;
+    const cab = `
+      <thead>
+        <tr>
+          <th rowspan="2" class="fixa">Nº</th><th rowspan="2" class="fixa fixa-2">Exercício</th>
+          <th rowspan="2">Séries warm up</th><th rowspan="2">Séries work</th><th rowspan="2">Reps work</th><th rowspan="2">RIR work</th>
+          <th rowspan="2">Séries top</th><th rowspan="2">Reps top</th><th rowspan="2">RIR top</th><th rowspan="2">Intervalo</th>
+          ${Array.from({ length: MAX_SERIES }, (_, k) => `<th colspan="2">Série ${k + 1}</th>`).join('')}
+          <th rowspan="2">Total reps</th><th rowspan="2">Kg</th><th rowspan="2">Tonelagem</th>
+        </tr>
+        <tr>${Array.from({ length: MAX_SERIES }, () => '<th>Reps</th><th>Kg</th>').join('')}</tr>
+      </thead>`;
+
+    const linha = (item, k, m) => {
+      const w = item.semanas.find((x) => x.microciclo === m);
+      const mr = item.metodo === 'muscle_round';
+      // Muscle Round: cada bloco ocupa uma "série" da planilha
+      const series = mr ? Array.from({ length: item.mr_blocos || 4 }, () => ({ tipo: 'muscle_round' })) : (w?.series || []);
+      const aquecimento = (item.tem_warmup ? 1 : 0) + item.feeders_efetivas.length;
+      return `<tr>
+        <td class="fixa">${k + 1}</td>
+        <td class="fixa fixa-2 nome">${esc(item.exercicio.nome)}</td>
+        <td title="${item.tem_warmup ? 'Warm up + ' : ''}${item.feeders_efetivas.length} feeder(s)">${aquecimento}</td>
+        <td>${mr ? '—' : w?.n_ws ?? 0}</td><td>${mr ? '—' : faixa(item)}</td><td>${w?.n_ws ? w.rir_ws : '—'}</td>
+        <td>${mr ? `${w?.n_mr ?? 0} MR` : w?.n_top ?? 0}${w?.n_bo ? ` + ${w.n_bo} BO` : ''}</td>
+        <td>${faixa(item)}</td><td>${w?.n_top ? w.rir_top : '—'}</td><td>${segundos(item.descanso_seg)}</td>
+        ${Array.from({ length: MAX_SERIES }, (_, j) => series[j]
+          ? `<td class="vazia">${etiqueta(series[j].tipo)}</td><td class="vazia"></td>`
+          : '<td class="sem"></td><td class="sem"></td>').join('')}
+        <td>—</td><td>—</td><td>—</td>
+      </tr>`;
+    };
+
+    return Array.from({ length: n }, (_, i) => i + 1).map((m) => `
+      <section class="card bloco">
+        <h2>Treino ${esc(sessao.codigo)} · ${esc(sessao.nome)} – Micro ${m}</h2>
+        <div class="tabela-rolavel"><table class="tabela planilha num">
+          ${cab}
+          <tbody>${sessao.itens.map((item, k) => linha(item, k, m)).join('')}</tbody>
+        </table></div>
+        <p class="dica">Observações sobre o treino: —</p>
+      </section>`).join('');
+  }
+
+  // Visão "volume em escada": semanas × exercícios, editável (toque na célula)
+  function escada() {
+    const n = dados.programa.n_microciclos;
+    return `
+      <section class="card">
+        <h2>Volume em escada</h2>
+        <p class="sub">Toque numa célula para mudar as séries daquela semana.</p>
+        <div class="tabela-rolavel"><table class="tabela escada">
+          <thead><tr><th class="fixa">Exercício</th>${Array.from({ length: n }, (_, i) => `<th>S${i + 1}</th>`).join('')}</tr></thead>
+          <tbody>${dados.sessoes.map((s) => `
+            <tr class="grupo-linha"><th colspan="${n + 1}">Treino ${esc(s.codigo)} · ${esc(s.nome)}</th></tr>
+            ${s.itens.map((item) => `<tr>
+              <th class="fixa nome">${esc(item.exercicio.nome)}</th>
+              ${item.semanas.map((w) => `<td><button type="button" class="celula-escada ${w.n_bo ? 'com-bo' : ''}" data-celula="${item.id}:${w.microciclo}">${esc(w.descricao)}</button></td>`).join('')}
+            </tr>`).join('')}`).join('')}
+          </tbody>
+        </table></div>
+      </section>`;
+  }
+
+  desenhar();
 }

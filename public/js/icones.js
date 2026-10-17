@@ -12,6 +12,8 @@ const P = {
   play: '<polygon points="6 3 20 12 6 21 6 3"/>',
   seta: '<path d="m9 18 6-6-6-6"/>',
   voltar: '<path d="m15 18-6-6 6-6"/>',
+  'seta-cima': '<path d="m18 15-6-6-6 6"/>',
+  'seta-baixo': '<path d="m6 9 6 6 6-6"/>',
   mais: '<path d="M5 12h14"/><path d="M12 5v14"/>',
   busca: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
   fechar: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',

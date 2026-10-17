@@ -4,6 +4,7 @@ import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { aplicarMigracoes } from './migracoes.js';
 import { semearBiblioteca } from './biblioteca.js';
+import { semearModelo } from './programas.js';
 
 export const CAMINHO_PADRAO = 'data/treino.db';
 
@@ -15,6 +16,8 @@ export function abrirBanco(caminho = process.env.DB_PATH || CAMINHO_PADRAO) {
   db.exec('PRAGMA foreign_keys = ON;');
   if (caminho !== ':memory:') db.exec('PRAGMA journal_mode = WAL;');
   aplicarMigracoes(db);
-  semearBiblioteca(db); // dados de referência: só quando a biblioteca está vazia
+  // Dados de referência: só entram quando ainda não existem
+  semearBiblioteca(db);
+  semearModelo(db);
   return db;
 }

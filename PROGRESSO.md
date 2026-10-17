@@ -1,13 +1,13 @@
 # Progresso do app
 
-**Etapa atual:** 3, Programa, escada e planilha (planejando)
+**Etapa atual:** 4, Ficha na academia (planejando)
 
 | Etapa | Nome | Status | Data | Observações |
 |---|---|---|---|---|
 | 0 | Base | ✅ | 17/10/2026 | Servidor, banco com migrações, tema, navegação, `iniciar.bat`, testes |
 | 1 | Pessoas e login | ✅ | 17/10/2026 | Admin com senha, alunos com Google + aprovação, anamnese, permissões, Tailscale |
 | 2 | Biblioteca de exercícios | ✅ | 17/10/2026 | 180 exercícios (170 da planilha + 10 só das fichas), busca, filtro, edição |
-| 3 | Programa, escada e planilha | ⬜ | | |
+| 3 | Programa, escada e planilha | ✅ | 17/10/2026 | Modelo A–E com a escada, editor, contador por músculo, planilha (estrutura) |
 | 4 | Ficha na academia | ⬜ | | |
 | 5 | Progressão, tonelagem e fadiga | ⬜ | | |
 | 6 | Corpo e gráficos | ⬜ | | |
@@ -24,10 +24,15 @@ Legenda: ⬜ não iniciada · 🔨 em andamento · 👀 esperando o teste do Luc
 
 - **Etapa 2:** migração `003_exercicios`. Seed em `src/db/dados/biblioteca.js`, que entra sozinho quando a biblioteca está vazia (é dado de referência, não de exemplo). Os exercícios das fichas que são os mesmos da planilha viram um só, com o nome da ficha, e o nome antigo fica em "outros nomes" (ex.: Voador máquina → Crucifixo máquina). Grupos musculares e equipamentos em `src/treino/grupos.js`, com região superior/inferior para a escada. Busca sem acento, filtro por grupo (o principal vem primeiro, depois os indiretos), criar/editar/desativar (só admin), substitutos ligados a outros exercícios. 38 testes.
 
+- **Etapa 3:** decisões novas no `docs/03` (o Lucas também treina; exceções 2→3→2+BO; Muscle Round = 1 MR fixo). Migração `004_programas` (programas, sessoes_modelo, itens_sessao, itens_semana). Regras puras em `src/treino/`: `escada.js` (escada padrão, "2 WS" = 1 WS RIR 1 + 1 TOP RIR 0, BO −20%), `feeders.js` (50/75/90 · 75/90 · 80, arredondadas ao incremento), `volume.js` (warm-up no 1º exercício de cada grupo, séries por músculo, avisos <4 e >10). Modelo pronto em `src/db/dados/modelo.js`, criado sozinho quando não existe nenhum modelo. Telas: Programas (copiar o modelo para alguém, montar do zero, editor por treino com a escada clicável, formulário do item, aba Volume) e Planilha (abas por treino, um bloco por microciclo com as colunas da planilha, aba Escada editável). 63 testes. Conferido em prints de celular (390px) e desktop.
+
 ## Pendências / DECIDIR
 - **Navegação do admin no celular:** as 4 telas do treinador ficam dentro da 5ª aba "Gestão" (só o admin vê). No desktop aparecem direto na barra lateral.
 - **Falta o Lucas:** ativar o Funnel no Tailscale (o login já foi feito; em 17/10 o Funnel ainda aparecia como desligado), criar as credenciais do Google e o `.env` (passo a passo em `DEPLOY.md`).
 - **Biblioteca, confirmar:** classifiquei grupos, multi/isolado e equipamento dos 170 da planilha pelo nome. Tratei como iguais: Hack squat = Agachamento hack 45; Bíceps martelo banco = Rosca martelo sentado; Panturrilha sentado = Banco solear; Puxada aberta = Puxada alta pronada. Ficaram separados: T-bar row x Remada cavalinho; Stiff x Terra romeno; Elevação pélvica máquina x Elevação pélvica. Dá para corrigir tudo na tela Biblioteca.
+- Apagar um treino ou um exercício do programa hoje apaga direto (`// DECIDIR` em `src/routes/programas.js`). Na Etapa 4, bloquear quando já tiver séries registradas.
+- Trocar o método de um item para Muscle Round não muda a escada sozinho: ajuste as semanas para "1 MR" na grade.
+- Na planilha, a coluna "Séries warm up" mostra warm up + feeders (ex.: 4 = 1 warm up + 3 feeders).
 - Recusar um cadastro = desativar (nada é apagado). Se quiser um botão de "apagar de vez", pedir.
 - A fonte Inter vem do Google Fonts; sem internet, usa a fonte do sistema. Na Etapa 8, o service worker guarda a fonte no celular.
 

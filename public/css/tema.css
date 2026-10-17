@@ -6,6 +6,7 @@
   --superficie-2: #1C1C1C;
   --borda: #262626;
   --fundo-vidro: rgb(10 10 10 / 0.88);
+  --veu: rgb(0 0 0 / 0.6);
 
   /* Texto */
   --texto: #FAFAFA;
@@ -28,6 +29,14 @@
   /* Botão do Google (regras da marca: fundo branco) */
   --google-fundo: #FFFFFF;
   --google-texto: #1F1F1F;
+
+  /* Tipos de série (cores discretas nas etiquetas) */
+  --tipo-warmup: #737373;
+  --tipo-feeder: #94A3B8;
+  --tipo-ws: #3B82F6;
+  --tipo-top: #8B5CF6;
+  --tipo-bo: #06B6D4;
+  --tipo-mr: #EC4899;
 
   /* Tipografia */
   --fonte: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;

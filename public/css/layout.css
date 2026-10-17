@@ -39,6 +39,9 @@
 }
 .tela.larga { max-width: 1200px; }
 @keyframes entrar { from { opacity: 0; transform: translateY(4px); } }
+/* Itens de grade podem encolher (senão um texto ou tabela larga estica a página) */
+.tela > *, .card > *, .form > * { min-width: 0; }
+select { max-width: 100%; text-overflow: ellipsis; }
 
 /* Navegação inferior */
 .nav {
@@ -428,3 +431,105 @@ body.sem-nav .topo { display: none; }
   font: inherit;
   cursor: pointer;
 }
+
+/* Programas */
+.modelo { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--borda); border-radius: var(--raio); background: var(--superficie-2); }
+.modelo .texto { font-weight: 600; }
+.modelo .texto small { display: block; color: var(--texto-2); font-weight: 400; font-size: 13px; }
+.usar { display: flex; gap: 8px; }
+.usar select, .linha-form input {
+  flex: 1; min-width: 0; min-height: var(--toque); padding: 0 12px;
+  border: 1px solid var(--borda); border-radius: var(--raio); background: var(--superficie); color: var(--texto); font: inherit; font-size: 16px;
+}
+.linha-form { display: flex; gap: 8px; align-items: center; }
+.linha-form .curto { flex: 0 0 64px; text-align: center; font-weight: 700; }
+.resumo-detalhe { display: flex; align-items: center; gap: 8px; min-height: var(--toque); cursor: pointer; color: var(--texto-2); font-weight: 600; list-style: none; }
+.resumo-detalhe::-webkit-details-marker { display: none; }
+.resumo-detalhe svg { width: 18px; height: 18px; }
+details[open] > .resumo-detalhe { margin-bottom: 12px; }
+.cabecalho-programa { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.cabecalho-programa > div { min-width: 0; }
+.segmentos.rolar { flex-wrap: wrap; }
+.segmentos.rolar button { flex: 1 0 auto; padding: 0 12px; }
+.segmentos button svg { width: 18px; height: 18px; display: inline-block; vertical-align: middle; }
+.grade-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.grade-3 > label { min-width: 0; }
+.botao-icone.perigo { color: var(--texto-3); }
+.botao-icone.perigo:hover { color: var(--erro); }
+.botao-icone:disabled { opacity: 0.3; cursor: default; }
+
+.item { gap: 10px; }
+.item.aberto { border-color: var(--destaque); }
+.item-topo { display: flex; gap: 12px; align-items: flex-start; }
+.item-num {
+  flex: none; width: 28px; height: 28px; display: grid; place-items: center;
+  border-radius: 8px; background: var(--superficie-2); color: var(--texto-2); font-size: 13px; font-weight: 700;
+}
+.item-nome { min-width: 0; }
+.item-nome h3 { font-size: 16px; overflow-wrap: anywhere; }
+.item-nome .sub { font-size: 13px; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag {
+  display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; white-space: nowrap;
+  color: var(--cor-tag); background: color-mix(in srgb, var(--cor-tag) 16%, transparent);
+}
+.tag-warmup { --cor-tag: var(--tipo-warmup); }
+.tag-feeder { --cor-tag: var(--tipo-feeder); }
+.tag-ws { --cor-tag: var(--tipo-ws); }
+.tag-top { --cor-tag: var(--tipo-top); }
+.tag-bo { --cor-tag: var(--tipo-bo); }
+.tag-muscle_round { --cor-tag: var(--tipo-mr); }
+.escada-linha { display: grid; grid-template-columns: repeat(min(var(--colunas), 3), 1fr); gap: 6px; }
+.celula-escada {
+  width: 100%; min-height: var(--toque); padding: 4px 6px; display: grid; place-items: center; gap: 0;
+  border: 1px solid var(--borda); border-radius: 10px; background: var(--superficie-2); color: var(--texto);
+  font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; font-variant-numeric: tabular-nums;
+}
+.celula-escada small { color: var(--texto-3); font-size: 11px; font-weight: 500; }
+.celula-escada:hover { border-color: var(--destaque); }
+.celula-escada.com-bo { border-color: color-mix(in srgb, var(--tipo-bo) 50%, var(--borda)); }
+.acoes-item { display: flex; gap: 4px; align-items: center; }
+.acoes-item .botao { margin-left: auto; min-height: 40px; }
+.form-item { padding-top: 12px; border-top: 1px solid var(--borda); }
+.feeders { display: grid; gap: 10px; }
+.trocar { display: grid; gap: 6px; }
+
+/* Tabelas (planilha, volume) — rolam por dentro, a página não */
+.tabela-rolavel { overflow-x: auto; margin: 0 -20px; padding: 0 20px; -webkit-overflow-scrolling: touch; }
+.tabela { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 13px; }
+.tabela th, .tabela td { padding: 8px 10px; border-bottom: 1px solid var(--borda); text-align: center; white-space: nowrap; }
+.tabela thead th { color: var(--texto-2); font-weight: 600; font-size: 12px; background: var(--superficie); }
+.tabela tbody th { text-align: left; font-weight: 500; }
+.tabela .nome { text-align: left; max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+.tabela .fixa { position: sticky; left: 0; z-index: 1; background: var(--superficie); }
+.tabela .fixa-2 { left: 38px; box-shadow: 1px 0 0 var(--borda); }
+.planilha td.sem { background: var(--fundo); }
+.planilha td.vazia { min-width: 44px; }
+.escada td { padding: 4px; }
+.escada .celula-escada { min-width: 96px; }
+.escada .grupo-linha th { background: var(--superficie-2); color: var(--texto-2); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+.bloco h2 { font-size: 16px; }
+.vol-ok { color: var(--texto); }
+.vol-abaixo { color: var(--atencao); }
+.vol-acima { color: var(--erro); }
+
+/* Janela (dialog) */
+.dialogo {
+  width: min(440px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); padding: 20px;
+  border: 1px solid var(--borda); border-radius: var(--raio-g); background: var(--superficie); color: var(--texto);
+}
+.dialogo::backdrop { background: var(--veu); }
+.dialogo h2 { font-size: 18px; }
+.stepper { display: grid; gap: 6px; min-width: 0; }
+.stepper-rotulo { font-size: 13px; font-weight: 500; color: var(--texto-2); }
+.stepper-controle { display: flex; align-items: center; border: 1px solid var(--borda); border-radius: var(--raio); background: var(--superficie-2); }
+.stepper-controle button {
+  flex: none; width: var(--toque); height: var(--toque); border: 0; background: none; color: var(--destaque);
+  font: inherit; font-size: 22px; font-weight: 600; cursor: pointer;
+}
+.stepper-controle output { flex: 1; text-align: center; font-size: 18px; font-weight: 700; }
+.seletor input {
+  width: 100%; min-height: var(--toque); padding: 10px 14px;
+  border: 1px solid var(--borda); border-radius: var(--raio); background: var(--superficie-2); color: var(--texto); font: inherit; font-size: 16px;
+}
+.seletor input:focus { outline: none; border-color: var(--destaque); }

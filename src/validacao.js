@@ -131,3 +131,93 @@ export function validarExercicio(e = {}) {
     },
   };
 }
+
+// --- Programas ---
+export const PAPEIS = ['principal', 'secundario', 'isolado'];
+
+export function validarPrograma(p = {}) {
+  const nome = texto(p.nome, 100, 'Nome do programa');
+  if (nome.erro) return { erro: nome.erro };
+  if (!nome.valor || nome.valor.length < 2) return { erro: 'Dê um nome ao programa.' };
+  const n = numero(p.n_microciclos, 1, 12, 'Nº de microciclos (semanas)', true);
+  if (n.erro || n.valor === null) return { erro: n.erro || 'Informe o nº de microciclos.' };
+  const descricao = texto(p.descricao, 500, 'Descrição');
+  if (descricao.erro) return { erro: descricao.erro };
+  let inicio = { valor: null };
+  if (!vazio(p.inicio)) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(p.inicio) || Number.isNaN(Date.parse(p.inicio))) return { erro: 'Data de início inválida.' };
+    inicio = { valor: p.inicio };
+  }
+  return { dados: { nome: nome.valor, n_microciclos: n.valor, descricao: descricao.valor, inicio: inicio.valor } };
+}
+
+export function validarSessao(s = {}) {
+  const codigo = texto(s.codigo, 3, 'Código do treino');
+  if (codigo.erro || !codigo.valor) return { erro: codigo.erro || 'Informe o código do treino (ex.: A).' };
+  const nome = texto(s.nome, 40, 'Nome do treino');
+  if (nome.erro || !nome.valor) return { erro: nome.erro || 'Informe o nome do treino (ex.: Push).' };
+  return { dados: { codigo: codigo.valor.toUpperCase(), nome: nome.valor } };
+}
+
+export function validarItem(i = {}) {
+  if (!PAPEIS.includes(i.papel)) return { erro: 'Escolha o papel: principal, secundário ou isolado.' };
+  if (!['auto', 'sim', 'nao'].includes(i.warmup ?? 'auto')) return { erro: 'Warm-up inválido.' };
+  if (!['normal', 'muscle_round'].includes(i.metodo ?? 'normal')) return { erro: 'Método inválido.' };
+  const mr = (i.metodo ?? 'normal') === 'muscle_round';
+
+  const min = numero(i.reps_min, 1, 50, 'Reps mínimas', true);
+  const max = numero(i.reps_max, 1, 100, 'Reps máximas', true);
+  if (min.erro || max.erro) return { erro: min.erro || max.erro };
+  if (!mr && (min.valor === null || max.valor === null)) return { erro: 'Informe a faixa de reps (ex.: 5 a 9).' };
+  if (min.valor !== null && max.valor !== null && min.valor > max.valor) return { erro: 'As reps mínimas passam das máximas.' };
+
+  const desc = numero(i.descanso_seg, 0, 600, 'Descanso (s)', true);
+  if (desc.erro || desc.valor === null) return { erro: desc.erro || 'Informe o descanso.' };
+  const cad = String(i.cadencia ?? '2-0-1-0').trim();
+  if (!/^[0-9X]-[0-9X]-[0-9X]-[0-9X]$/i.test(cad)) return { erro: 'Cadência no formato 2-0-1-0.' };
+
+  const blocos = numero(i.mr_blocos, 1, 10, 'Blocos do Muscle Round', true);
+  const repsMr = numero(i.mr_reps, 1, 30, 'Reps por bloco', true);
+  const descMr = numero(i.mr_descanso_seg, 0, 60, 'Descanso entre blocos (s)', true);
+  if (blocos.erro || repsMr.erro || descMr.erro) return { erro: blocos.erro || repsMr.erro || descMr.erro };
+
+  let feeders = null;
+  if (Array.isArray(i.feeders)) {
+    if (i.feeders.length > 3) return { erro: 'No máximo 3 feeders.' };
+    feeders = [];
+    for (const f of i.feeders) {
+      const reps = texto(f?.reps, 10, 'Reps da feeder');
+      const pct = numero(f?.pct, 10, 100, '% da feeder', true);
+      const d = numero(f?.descanso, 0, 300, 'Descanso da feeder', true);
+      if (reps.erro || pct.erro || d.erro || !reps.valor || pct.valor === null) return { erro: reps.erro || pct.erro || d.erro || 'Feeder incompleta.' };
+      feeders.push({ reps: reps.valor, pct: pct.valor, descanso: d.valor ?? 45 });
+    }
+  }
+  const obs = texto(i.observacoes, 500, 'Observações');
+  if (obs.erro) return { erro: obs.erro };
+
+  return {
+    dados: {
+      papel: i.papel, warmup: i.warmup ?? 'auto', metodo: i.metodo ?? 'normal', feeders,
+      reps_min: min.valor, reps_max: max.valor, descanso_seg: desc.valor, cadencia: cad.toUpperCase(),
+      mr_blocos: mr ? (blocos.valor ?? 4) : null, mr_reps: mr ? (repsMr.valor ?? 4) : null, mr_descanso_seg: mr ? (descMr.valor ?? 10) : null,
+      observacoes: obs.valor,
+    },
+  };
+}
+
+// Uma semana da escada
+export function validarSemana(s = {}) {
+  const regras = [
+    ['microciclo', 1, 12, 'Semana'], ['n_ws', 0, 6, 'Nº de WS'], ['rir_ws', 0, 5, 'RIR das WS'], ['n_top', 0, 2, 'Nº de TOP'],
+    ['rir_top', 0, 5, 'RIR do TOP'], ['n_bo', 0, 3, 'Nº de BO'], ['pct_bo', 5, 50, '% do back-off'], ['n_mr', 0, 3, 'Nº de Muscle Rounds'],
+  ];
+  const dados = {};
+  for (const [campo, min, max, rotulo] of regras) {
+    const r = numero(s[campo], min, max, rotulo, campo !== 'pct_bo');
+    if (r.erro || r.valor === null) return { erro: r.erro || `${rotulo}: obrigatório.` };
+    dados[campo] = r.valor;
+  }
+  if (dados.n_bo > 0 && dados.n_top === 0) return { erro: 'O back-off vem depois do TOP: coloque 1 TOP.' };
+  return { dados };
+}
