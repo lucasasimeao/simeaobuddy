@@ -6,6 +6,7 @@ import { carregarUsuario } from './auth/permissoes.js';
 import { rotasSaude } from './routes/saude.js';
 import { rotasAuth } from './routes/auth.js';
 import { rotasAlunos } from './routes/alunos.js';
+import { rotasExercicios } from './routes/exercicios.js';
 
 const PUBLICO = join(dirname(fileURLToPath(import.meta.url)), '..', 'public');
 
@@ -20,6 +21,7 @@ export function criarApp(db, opcoes = {}) {
   app.use('/api/saude', rotasSaude(db));
   app.use('/api/auth', rotasAuth(db, opcoes));
   app.use('/api/alunos', rotasAlunos(db));
+  app.use('/api/exercicios', rotasExercicios(db));
 
   // Rota de API que não existe → erro em JSON
   app.use('/api', (req, res) => res.status(404).json({ erro: 'Rota não encontrada.' }));

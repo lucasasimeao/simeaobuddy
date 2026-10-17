@@ -1,4 +1,5 @@
 // Validação dos dados que chegam nas rotas. Devolve { dados } ou { erro } com mensagem amigável.
+import { GRUPOS, EQUIPAMENTOS } from './treino/grupos.js';
 
 export const OBJETIVOS = ['emagrecimento', 'hipertrofia'];
 export const NIVEIS = ['iniciante', 'intermediario', 'avancado'];
@@ -71,4 +72,62 @@ export function validarNome(v) {
   if (r.erro) return r;
   if (!r.valor || r.valor.length < 2) return { erro: 'Nome: escreva pelo menos 2 letras.' };
   return { valor: r.valor };
+}
+
+// --- Exercícios ---
+export function validarExercicio(e = {}) {
+  const nome = texto(e.nome, 80, 'Nome');
+  if (nome.erro) return { erro: nome.erro };
+  if (!nome.valor || nome.valor.length < 2) return { erro: 'Nome: escreva pelo menos 2 letras.' };
+  if (!GRUPOS[e.grupo_primario]) return { erro: 'Escolha o grupo muscular principal.' };
+  if (!['multi', 'isolado'].includes(e.tipo)) return { erro: 'Escolha se é multiarticular ou isolado.' };
+  if (!EQUIPAMENTOS[e.equipamento]) return { erro: 'Escolha o equipamento.' };
+
+  const sec = Array.isArray(e.grupos_secundarios) ? e.grupos_secundarios : [];
+  const vistos = new Set([e.grupo_primario]);
+  for (const s of sec) {
+    if (!GRUPOS[s?.grupo]) return { erro: 'Grupo secundário inválido.' };
+    if (vistos.has(s.grupo)) return { erro: 'Um grupo secundário está repetido (ou é igual ao principal).' };
+    vistos.add(s.grupo);
+    const f = Number(s.fracao);
+    if (!(f > 0 && f <= 1)) return { erro: 'A fração do grupo secundário vai de 0,1 a 1.' };
+  }
+
+  const inc = numero(e.incremento_kg, 0.25, 50, 'Incremento (kg)');
+  if (inc.erro || inc.valor === null) return { erro: inc.erro || 'Informe o incremento de carga.' };
+
+  let video = null;
+  if (!vazio(e.video_url)) {
+    try {
+      const u = new URL(String(e.video_url).trim());
+      if (!['http:', 'https:'].includes(u.protocol)) throw new Error();
+      video = u.toString();
+    } catch {
+      return { erro: 'Link do vídeo inválido (precisa começar com https://).' };
+    }
+  }
+  const obs = texto(e.observacoes, 1000, 'Observações');
+  if (obs.erro) return { erro: obs.erro };
+  const apelidos = texto(e.apelidos, 200, 'Outros nomes');
+  if (apelidos.erro) return { erro: apelidos.erro };
+
+  const subs = Array.isArray(e.substitutos) ? [...new Set(e.substitutos.map(Number))] : [];
+  if (subs.some((n) => !Number.isInteger(n) || n <= 0)) return { erro: 'Substituto inválido.' };
+  if (subs.length > 10) return { erro: 'No máximo 10 substitutos.' };
+
+  return {
+    dados: {
+      nome: nome.valor,
+      apelidos: apelidos.valor,
+      grupo_primario: e.grupo_primario,
+      grupos_secundarios: sec.map((s) => ({ grupo: s.grupo, fracao: Number(s.fracao) })),
+      tipo: e.tipo,
+      estavel: Boolean(e.estavel),
+      equipamento: e.equipamento,
+      incremento_kg: inc.valor,
+      video_url: video,
+      observacoes: obs.valor,
+      substitutos: subs,
+    },
+  };
 }
