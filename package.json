@@ -15,6 +15,7 @@
     "criar-admin": "node --disable-warning=ExperimentalWarning src/db/criar-admin.js"
   },
   "dependencies": {
+    "chart.js": "^4.4.7",
     "express": "^5.3.0"
   }
 }

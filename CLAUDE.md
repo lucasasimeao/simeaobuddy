@@ -61,4 +61,5 @@ Detalhes em `docs/05` §Visual.
 - `npm run seed`: cria/atualiza o banco de exemplo `data/exemplo.db` (nunca mexe no real): admin `exemplo` / senha `exemplo123` e a aluna "Ana Exemplo" com 5 microciclos registrados.
 - `testar-exemplo.bat`: desliga o servidor normal e liga o app no banco de exemplo (os .bat precisam de quebra de linha CRLF).
 - Usar o banco de exemplo: no PowerShell, `$env:DB_PATH="data/exemplo.db"; npm start`.
+- Fotos do Corpo: `data/fotos/<nome do banco>/<id da pessoa>/` (real em `data/fotos/treino/`, exemplo em `data/fotos/exemplo/`).
 - Banco real: `data/treino.db`. Migrações em `src/db/migracoes/NNN_nome.sql` (só aditivas), aplicadas sozinhas ao iniciar.

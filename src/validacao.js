@@ -246,6 +246,39 @@ export function validarSerie(s = {}, item) {
   return { dados: { posicao, bloco, tipo, carga: carga.valor, reps: reps.valor, rir: rir.valor ?? planejadas[posicao].rir ?? null, uuid } };
 }
 
+// --- Corpo: data (padrão hoje, nunca no futuro), peso e medidas ---
+export function validarDataCorpo(v, hoje) {
+  if (vazio(v)) return { valor: hoje };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v) || Number.isNaN(Date.parse(v))) return { erro: 'Data inválida.' };
+  if (v > hoje) return { erro: 'A data não pode ser no futuro.' };
+  if (v < '2000-01-01') return { erro: 'Data fora do esperado.' };
+  return { valor: v };
+}
+
+export function validarPeso(p = {}, hoje) {
+  const data = validarDataCorpo(p.data, hoje);
+  if (data.erro) return { erro: data.erro };
+  const peso = numero(p.peso, 30, 300, 'Peso (kg)');
+  if (peso.erro || peso.valor === null) return { erro: peso.erro || 'Informe o peso.' };
+  return { dados: { data: data.valor, peso: Math.round(peso.valor * 10) / 10 } };
+}
+
+export function validarMedidas(m = {}, campos, hoje) {
+  const data = validarDataCorpo(m.data, hoje);
+  if (data.erro) return { erro: data.erro };
+  const dados = { data: data.valor };
+  for (const c of campos) {
+    const n = c.unidade === '%' ? numero(m[c.campo], 2, 70, c.texto) : numero(m[c.campo], 10, 250, `${c.texto} (cm)`);
+    if (n.erro) return { erro: n.erro };
+    dados[c.campo] = n.valor;
+  }
+  if (campos.every((c) => dados[c.campo] === null)) return { erro: 'Preencha pelo menos uma medida.' };
+  const obs = texto(m.observacao, 300, 'Observação');
+  if (obs.erro) return { erro: obs.erro };
+  dados.observacao = obs.valor;
+  return { dados };
+}
+
 // --- Check-in semanal: as 5 notas de 1 a 5 são obrigatórias ---
 export function validarCheckin(c = {}, perguntas) {
   const dados = {};

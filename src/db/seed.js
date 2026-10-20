@@ -74,6 +74,29 @@ if (jaTem) {
   console.log(`Criados ${total} treinos de exemplo para a Ana Exemplo (5 microciclos).`);
 }
 
+// Corpo da Ana (objetivo emagrecimento): 10 semanas de peso; nas 2 últimas o ritmo cai devagar demais → alerta.
+// Medidas a cada 15 dias.
+db.prepare("UPDATE alunos SET objetivo = coalesce(objetivo, 'emagrecimento'), sexo = coalesce(sexo, 'F'), altura_cm = coalesce(altura_cm, 165) WHERE usuario_id = ?").run(ana);
+if (!db.prepare('SELECT 1 FROM pesos WHERE aluno_id = ? LIMIT 1').get(ana)) {
+  const inserir = db.prepare('INSERT INTO pesos (aluno_id, data, peso) VALUES (?, ?, ?)');
+  const ruido = [0.3, -0.2, 0.1, -0.3, 0.2, 0, -0.1];
+  for (let i = 69; i >= 0; i--) {
+    if (i % 9 === 4) continue; // um dia ou outro sem pesar
+    const semana = Math.floor((69 - i) / 7);
+    // −0,6 kg/semana nas 7 primeiras semanas, depois quase parado (3 semanas)
+    const tendencia = 74 - Math.min(semana, 7) * 0.6 - Math.max(semana - 7, 0) * 0.08;
+    const data = new Date(Date.now() - i * 86400000).toLocaleDateString('sv-SE');
+    inserir.run(ana, data, Math.round((tendencia + ruido[i % 7]) * 10) / 10);
+  }
+  const medir = db.prepare(`INSERT INTO medidas (aluno_id, data, cintura, peito, braco, coxa, quadril, panturrilha, gordura)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+  for (let k = 0; k < 5; k++) {
+    const data = new Date(Date.now() - (60 - k * 15) * 86400000).toLocaleDateString('sv-SE');
+    medir.run(ana, data, 80 - k * 1.1, 95 - k * 0.4, 30 + k * 0.1, 56 - k * 0.5, 102 - k * 0.9, 36, k % 2 ? null : 28 - k * 0.8);
+  }
+  console.log('Peso (10 semanas) e medidas (5) de exemplo criados para a Ana Exemplo.');
+}
+
 const tabelas = db.prepare("SELECT count(*) AS n FROM sqlite_master WHERE type = 'table'").get().n;
 db.close();
 console.log(`Banco de exemplo pronto em ${CAMINHO_EXEMPLO} (${tabelas} tabelas).`);
