@@ -1,6 +1,6 @@
 # Progresso do app
 
-**Etapa atual:** 5, Progressão, tonelagem e fadiga (a começar). Etapa 4 aprovada em 20/10/2026.
+**Etapa atual:** 6, Corpo e gráficos (em andamento). Etapas 4 e 5 aprovadas em 20/10/2026.
 
 | Etapa | Nome | Status | Data | Observações |
 |---|---|---|---|---|
@@ -9,7 +9,7 @@
 | 2 | Biblioteca de exercícios | ✅ | 17/10/2026 | 180 exercícios (170 da planilha + 10 só das fichas), busca, filtro, edição |
 | 3 | Programa, escada e planilha | ✅ | 17/10/2026 | Modelo A–E com a escada, editor, contador por músculo, planilha (estrutura) |
 | 4 | Ficha na academia | ✅ | 20/10/2026 | Hoje (sequência), ficha completa, timer, troca, resumo, planilha com dados |
-| 5 | Progressão, tonelagem e fadiga | ⬜ | | |
+| 5 | Progressão, tonelagem e fadiga | ✅ | 20/10/2026 | Status 🟢🟡🔴, sugestão de carga, e1RM/PR, aba Progressão, fadiga, deload, check-in |
 | 6 | Corpo e gráficos | ⬜ | | |
 | 7 | Exportar Excel e backup | ⬜ | | |
 | 8 | PWA, offline e hospedagem | ⬜ | | |
@@ -28,7 +28,15 @@ Legenda: ⬜ não iniciada · 🔨 em andamento · 👀 esperando o teste do Luc
 
 - **Etapa 4:** treino do dia pela sequência (decisão no `docs/03` item 3). Migração `005_treinos` (treinos_realizados, series_realizadas com uuid, trocas_treino). Regras puras novas: `sequencia.js` (próximo treino, micro, semana da escada que se repete) e `tonelagem.js` (tonelagem, total de reps, carga utilizada = top, back-off −20%, variação %). As regras de `src/treino/` também são servidas em `/js/treino/`, então a ficha usa as mesmas funções (feeders e BO ao vivo) sem copiar código. Telas: Hoje (próximo treino, continuar, escolher outro, último treino), Ficha (`#/treino/ID`: warm-up, feeders com kg, WS/TOP/BO/MR com +/−, micro anterior, repetir anterior, timer com vibração e bipe, trocar exercício, observações, finalizar/descartar), Resumo (`#/treino/ID/resumo`). A planilha passa a mostrar reps/kg/total/carga/tonelagem e as observações; os microciclos depois da S3 viram blocos novos (Micro 4, 5…). Apagar treino ou exercício com histórico agora é bloqueado. 83 testes + teste de ponta a ponta no navegador (Edge, 390px).
 
+- **Etapa 5:** migração `006_checkins`. Regras puras novas: `progressao.js` (status progrediu/manteve/regrediu, variação % contra o micro anterior e o Micro 1, desvio da faixa, sugestão de carga por dupla progressão, e1RM), `fadiga.js` (baixa/moderada/alta/NÃO EXECUTADO com as mensagens do `docs/04`, limites em `LIMITES`, sugestão de deload) e `checkin.js` (semana ISO, média). `src/db/progressao.js` monta tudo por treino × microciclo e por microciclo (todos os treinos juntos). Telas: ficha com a "sugestão de hoje" em cada exercício; resumo com 🟢🟡🔴 e PR (melhor e1RM); Hoje com check-in semanal (5 notas de 1 a 5), fadiga do último micro e alerta de deload; Planilha com a aba **Progressão** (quadro geral por micro + um bloco por micro de cada treino com tonelagem/reps/carga, % e "Análise do microciclo"). Série salva sem RIR fica com o RIR planejado. `npm run seed` agora cria a "Ana Exemplo" com 5 micros (sobe, sobe, cai, cai → deload). 108 testes + prints no Edge (390px).
+
 ## Pendências / DECIDIR
+- **Status com a escada (Etapa 5):** para o status 🟢🟡🔴 e para a fadiga, comparo a **tonelagem por série sem o BO** (senão a S2 com 3 séries sempre "progride" e a S1 seguinte sempre "regride"). A coluna Tonelagem e as % da planilha continuam com o total, como na planilha original.
+- **Mesma carga com menos reps** = regrediu (a regra do `docs/04` não cobre esse caso; `// DECIDIR` em `progressao.js`). Reps do TOP abaixo do mínimo = regrediu mesmo tendo subido a carga (pulo grande demais).
+- **Sugestão abaixo da faixa:** propõe −5% arredondado ao incremento; se isso passar de −10% (ex.: 25 → 20 kg numa máquina de 5 em 5), sugere só manter.
+- **Deload:** o app só **sugere** (cartão no Hoje e na aba Progressão). Rodar a semana de deload dentro da ficha (metade das séries, RIR 3–4) não está feito; se quiser, entra numa etapa futura.
+- **Check-in:** fica na tela Hoje (uma vez por semana, dá para corrigir na mesma semana). Média ≤ 2 sugere deload. Em todas as notas 5 = melhor (dor 5 = sem dor).
+- **Fadiga do microciclo** junta todos os treinos daquele micro; o deload olha os 2 últimos micros com treino.
 - **Navegação do admin no celular:** as 4 telas do treinador ficam dentro da 5ª aba "Gestão" (só o admin vê). No desktop aparecem direto na barra lateral.
 - **Falta o Lucas:** ativar o Funnel no Tailscale (o login já foi feito; em 17/10 o Funnel ainda aparecia como desligado), criar as credenciais do Google e o `.env` (passo a passo em `DEPLOY.md`).
 - **Biblioteca, confirmar:** classifiquei grupos, multi/isolado e equipamento dos 170 da planilha pelo nome. Tratei como iguais: Hack squat = Agachamento hack 45; Bíceps martelo banco = Rosca martelo sentado; Panturrilha sentado = Banco solear; Puxada aberta = Puxada alta pronada. Ficaram separados: T-bar row x Remada cavalinho; Stiff x Terra romeno; Elevação pélvica máquina x Elevação pélvica. Dá para corrigir tudo na tela Biblioteca.
@@ -42,6 +50,7 @@ Legenda: ⬜ não iniciada · 🔨 em andamento · 👀 esperando o teste do Luc
 
 ## Como rodar
 - **Jeito fácil:** ícone **SIMEAOBuddy** na área de trabalho. O servidor já liga sozinho quando o Windows inicia (sem janela). Para desligar: `parar.bat`. Para tirar o início automático: `powershell -ExecutionPolicy Bypass -File instalar-atalhos.ps1 -Remover`.
+- **Testar com dados fictícios:** duplo clique em `testar-exemplo.bat` (usa só o `data/exemplo.db`; login `exemplo` / `exemplo123`). Para voltar ao banco real: `parar.bat` e depois o ícone.
 - PC: duplo clique em `iniciar.bat` (ou `npm start`) → http://localhost:3100
 - Celular (mesma Wi-Fi): use o endereço "No celular" que aparece na janela preta (ex.: `http://192.168.0.109:3100`).
 - Link https (celular fora de casa e login Google): veja `DEPLOY.md`.

@@ -4,6 +4,7 @@ import { exigirLogin, exigirAdmin } from '../auth/permissoes.js';
 import { montarFicha, resumoTreino, resumoHoje, finalizadosDoPrograma, hojeLocal } from '../db/treinos.js';
 import { proximoTreino, microcicloParaSessao, semanaDaEscada } from '../treino/sequencia.js';
 import { validarSerie } from '../validacao.js';
+import { progressaoDoPrograma } from '../db/progressao.js';
 
 export function rotasTreinos(db) {
   const r = Router();
@@ -59,6 +60,13 @@ export function rotasTreinos(db) {
           FROM series_realizadas s WHERE s.treino_id IN (${treinos.map(() => '?').join(',')}) ORDER BY s.posicao, s.bloco`).all(...treinos.map((t) => t.id))
       : [];
     res.json({ treinos: treinos.map((t) => ({ ...t, series: series.filter((s) => s.treino_id === t.id) })) });
+  });
+
+  // Aba Progressão da planilha (admin): comparação por treino × microciclo, fadiga e deload
+  r.get('/progressao/:programaId', exigirAdmin, (req, res) => {
+    const p = progressaoDoPrograma(db, Number(req.params.programaId));
+    if (!p) return res.status(404).json({ erro: 'Programa não encontrado.' });
+    res.json(p);
   });
 
   r.get('/:id', exigirLogin, (req, res) => {

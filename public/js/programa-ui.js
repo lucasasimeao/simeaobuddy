@@ -13,6 +13,19 @@ export const segundos = (s) => (s >= 60 && s % 30 === 0 ? `${String(s / 60).repl
 
 export const etiqueta = (tipo, texto) => `<span class="tag tag-${tipo}">${esc(texto ?? ROTULO_TIPO[tipo])}</span>`;
 
+// 🟢 Progrediu · 🟡 Manteve · 🔴 Regrediu (sem base: nada)
+const STATUS = { progrediu: ['ok', 'Progrediu'], manteve: ['atencao', 'Manteve'], regrediu: ['erro', 'Regrediu'] };
+export const chipStatus = (status) => (STATUS[status]
+  ? `<span class="chip-estado ${STATUS[status][0]}"><span class="ponto"></span>${STATUS[status][1]}</span>` : '');
+
+// Fadiga do microciclo: { nivel, cor, texto }
+export const chipFadiga = (f) => (f && f.cor !== 'neutra'
+  ? `<span class="chip-estado ${f.cor}"><span class="ponto"></span>Fadiga ${esc(f.texto.toLowerCase())}</span>` : '');
+
+// Variação %: ▲ 3,5% / ▼ 2% / = (sem base: —)
+export const varPct = (v, vazio = '—') => (v == null ? `<span class="var neutra">${vazio}</span>`
+  : `<span class="var ${v > 0 ? 'subiu' : v < 0 ? 'caiu' : 'neutra'}">${v > 0 ? '▲' : v < 0 ? '▼' : '='} ${String(Math.abs(v)).replace('.', ',')}%</span>`);
+
 // Campo de número com − e + (toque grande)
 export function stepper(nome, rotulo, valor, { min = 0, max = 10, passo = 1 } = {}) {
   return `

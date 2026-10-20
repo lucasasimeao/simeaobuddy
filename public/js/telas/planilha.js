@@ -5,7 +5,7 @@ import { tonelagem, totalReps, cargaUtilizada } from '/js/treino/tonelagem.js';
 import { semanaDaEscada } from '/js/treino/sequencia.js';
 import { icone } from '../icones.js';
 import { esc } from '../componentes.js';
-import { faixa, segundos, etiqueta, editarSemana } from '../programa-ui.js';
+import { faixa, segundos, etiqueta, editarSemana, chipStatus, chipFadiga, varPct } from '../programa-ui.js';
 
 export const titulo = 'Planilha';
 export const larga = true;
@@ -23,6 +23,8 @@ export async function render(el, params) {
   let dados = await api(`/programas/${escolhido}`);
   const { treinos } = await api(`/treinos/planilha/${escolhido}`);
   let aba = params[1] || String(dados.sessoes[0]?.id || 'escada');
+  let prog = aba === 'progressao' ? await api(`/treinos/progressao/${escolhido}`) : null;
+  let abaProg = dados.sessoes[0]?.id;
 
   function desenhar() {
     const { programa, sessoes } = dados;
@@ -38,11 +40,19 @@ export async function render(el, params) {
       <div class="segmentos rolar" role="tablist">
         ${sessoes.map((s) => `<button role="tab" data-aba="${s.id}" aria-selected="${String(s.id) === aba}">Treino ${esc(s.codigo)}</button>`).join('')}
         <button role="tab" data-aba="escada" aria-selected="${aba === 'escada'}">Escada</button>
+        <button role="tab" data-aba="progressao" aria-selected="${aba === 'progressao'}">Progressão</button>
       </div>
-      ${aba === 'escada' ? escada() : sessao ? blocos(sessao) : ''}`;
+      ${aba === 'escada' ? escada() : aba === 'progressao' ? progressao() : sessao ? blocos(sessao) : ''}`;
 
     el.querySelector('#programa').addEventListener('change', (ev) => { location.hash = `#/planilha/${ev.target.value}`; });
-    for (const b of el.querySelectorAll('[data-aba]')) b.addEventListener('click', () => { aba = b.dataset.aba; desenhar(); });
+    for (const b of el.querySelectorAll('[data-aba]')) {
+      b.addEventListener('click', async () => {
+        aba = b.dataset.aba;
+        if (aba === 'progressao' && !prog) prog = await api(`/treinos/progressao/${escolhido}`);
+        desenhar();
+      });
+    }
+    for (const b of el.querySelectorAll('[data-prog]')) b.addEventListener('click', () => { abaProg = Number(b.dataset.prog); desenhar(); });
     for (const b of el.querySelectorAll('[data-celula]')) {
       b.addEventListener('click', async () => {
         const [itemId, semana] = b.dataset.celula.split(':').map(Number);
@@ -110,6 +120,64 @@ export async function render(el, params) {
         <p class="dica">Observações sobre o treino: ${treino?.observacao ? esc(treino.observacao) : '—'}</p>
       </section>`;
     }).join('');
+  }
+
+  // Aba Progressão: cada treino × micro contra o micro anterior e o Micro 1, e o quadro "Análise do microciclo"
+  function progressao() {
+    const n = (v) => (v == null ? '—' : String(v).replace('.', ','));
+    const kg = (v) => `${Math.round(v).toLocaleString('pt-BR')}`;
+    const contagem = (f) => (f.comparados ? `${f.progrediram} progrediram · ${f.mantiveram} mantiveram · ${f.regrediram} regrediram` : '');
+    const geral = `
+      <section class="card">
+        <h2>Análise por microciclo</h2>
+        <p class="sub">Todos os treinos juntos. É o que decide a sugestão de deload.</p>
+        ${prog.deload.sugerir ? `<div class="analise"><div class="analise-topo">${icone('alerta')}<b>Sugestão de deload</b></div>
+          <p>${esc(prog.deload.motivo)} ${esc(prog.deload.como)}</p></div>` : ''}
+        <div class="tabela-rolavel"><table class="tabela num">
+          <thead><tr><th>Micro</th><th>Treinos</th><th>Tonelagem</th><th title="Tonelagem por série, sem BO">Variação</th><th>Fadiga</th><th class="esq">Mensagem</th></tr></thead>
+          <tbody>${prog.micros.map((m) => `<tr>
+            <td>${m.microciclo}</td><td>${m.treinos_feitos}</td><td>${m.treinos_feitos ? kg(m.tonelagem) : '—'}</td>
+            <td>${varPct(m.var_comparavel)}</td><td>${chipFadiga(m.fadiga) || '—'}</td><td class="esq">${esc(m.fadiga.mensagem)}</td>
+          </tr>`).join('')}</tbody>
+        </table></div>
+        ${prog.checkin ? `<p class="dica">Último check-in (${esc(prog.checkin.semana_iso)}): média ${n(prog.checkin.media)} de 5.</p>` : '<p class="dica">Nenhum check-in semanal ainda.</p>'}
+      </section>`;
+
+    const sessao = prog.sessoes.find((s) => s.id === abaProg) || prog.sessoes[0];
+    if (!sessao) return geral;
+    const escolha = `<div class="segmentos rolar">${prog.sessoes.map((s) => `<button data-prog="${s.id}" aria-selected="${s.id === sessao.id}">Treino ${esc(s.codigo)}</button>`).join('')}</div>`;
+    const micros = sessao.micros.map((b) => {
+      if (!b.executado) {
+        return `<section class="card bloco"><h2>Treino ${esc(sessao.codigo)} – Micro ${b.microciclo}<small class="sub">NÃO EXECUTADO</small></h2></section>`;
+      }
+      return `
+      <section class="card bloco">
+        <h2>Treino ${esc(sessao.codigo)} · ${esc(sessao.nome)} – Micro ${b.microciclo}
+          <small class="sub">${b.data.split('-').reverse().join('/')} · ${kg(b.tonelagem)} kg${b.micro_anterior ? ` · comparado com o Micro ${b.micro_anterior}` : ''}</small></h2>
+        <div class="tabela-rolavel"><table class="tabela planilha num">
+          <thead>
+            <tr><th rowspan="2" class="fixa">Nº</th><th rowspan="2" class="fixa fixa-2">Exercício</th>
+              <th colspan="3">Tonelagem</th><th colspan="3">Reps</th><th colspan="3">Carga</th><th rowspan="2">Status</th></tr>
+            <tr><th>kg</th><th>vs ant.</th><th>vs M1</th><th>total</th><th>vs ant.</th><th title="Reps abaixo do mínimo / acima do máximo">desvio</th><th>kg</th><th>vs ant.</th><th>vs M1</th></tr>
+          </thead>
+          <tbody>${b.exercicios.map((e, k) => `<tr>
+            <td class="fixa">${k + 1}</td><td class="fixa fixa-2 nome">${esc(e.nome)}</td>
+            ${e.series ? `
+              <td>${kg(e.tonelagem)}</td><td>${varPct(e.vs_anterior?.tonelagem)}</td><td>${varPct(e.vs_micro1?.tonelagem)}</td>
+              <td>${e.reps}</td><td>${varPct(e.vs_anterior?.reps)}</td>
+              <td>${e.desvio.abaixo ? `<span class="var caiu">−${e.desvio.abaixo}</span>` : ''}${e.desvio.acima ? ` <span class="var subiu">+${e.desvio.acima}</span>` : ''}${e.desvio.abaixo || e.desvio.acima ? '' : '0'}</td>
+              <td>${n(e.carga)}</td><td>${varPct(e.vs_anterior?.carga)}</td><td>${varPct(e.vs_micro1?.carga)}</td>
+              <td>${chipStatus(e.status) || '—'}</td>`
+            : '<td colspan="10" class="vazia">não registrado</td>'}
+          </tr>`).join('')}</tbody>
+        </table></div>
+        <div class="analise">
+          <div class="analise-topo"><b>Análise do microciclo</b>${chipFadiga(b.fadiga)}${b.var_comparavel != null ? varPct(b.var_comparavel) : ''}</div>
+          <p>${esc(b.fadiga.mensagem)}${contagem(b.fadiga) ? ` ${contagem(b.fadiga)}.` : ''}</p>
+        </div>
+      </section>`;
+    }).join('');
+    return `${geral}${escolha}${micros}`;
   }
 
   // Visão "volume em escada": semanas × exercícios, editável (toque na célula)

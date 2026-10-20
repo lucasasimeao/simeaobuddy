@@ -2,6 +2,9 @@
 import { carregarPrograma } from './programas.js';
 import { proximoTreino, semanaDaEscada, microcicloAtual, feitosNoMicrociclo } from '../treino/sequencia.js';
 import { tonelagem, totalReps, cargaUtilizada, variacao } from '../treino/tonelagem.js';
+import { sugestaoCarga, statusProgressao, melhorE1rm } from '../treino/progressao.js';
+import { semanaIso } from '../treino/checkin.js';
+import { progressaoDoPrograma } from './progressao.js';
 
 export const hojeLocal = () => new Date().toLocaleDateString('sv-SE'); // AAAA-MM-DD no fuso do PC
 
@@ -31,6 +34,13 @@ function ultimaVez(db, alunoId, exercicioId, foraTreinoId) {
   const series = db.prepare('SELECT * FROM series_realizadas WHERE treino_id = ? AND exercicio_id = ? ORDER BY posicao, bloco')
     .all(t.id, exercicioId).map(lerSerie);
   return { treino_id: t.id, data: t.data, series };
+}
+
+// Melhor e1RM da pessoa neste exercício antes deste treino (para marcar PR)
+function recordeAnterior(db, alunoId, exercicioId, foraTreinoId) {
+  const series = db.prepare(`SELECT s.tipo, s.carga, s.reps, s.rir FROM series_realizadas s JOIN treinos_realizados t ON t.id = s.treino_id
+    WHERE t.aluno_id = ? AND t.status = 'finalizado' AND t.id <> ? AND s.exercicio_id = ?`).all(alunoId, foraTreinoId, exercicioId);
+  return melhorE1rm(series);
 }
 
 function exercicioResumo(e) {
@@ -70,6 +80,8 @@ export function montarFicha(db, treinoId) {
       anterior: ultimaVez(db, treino.aluno_id, atual.id, treino.id),
     };
     r.planejadas = seriesPlanejadas(r);
+    r.recorde_e1rm = recordeAnterior(db, treino.aluno_id, atual.id, treino.id);
+    r.sugestao = sugestaoCarga(r.anterior?.series, { ...r, incremento_kg: atual.incremento_kg, rir_top: r.semana?.rir_top });
     return r;
   });
 
@@ -95,6 +107,12 @@ export function resumoTreino(ficha) {
       carga: cargaUtilizada(item.registradas),
       tonelagem_anterior: tonAnt,
       variacao: variacao(ton, tonAnt),
+      status: statusProgressao(item.registradas, item.anterior?.series, item),
+      e1rm: melhorE1rm(item.registradas),
+      pr: (() => {
+        const e = melhorE1rm(item.registradas);
+        return e != null && item.recorde_e1rm != null && e > item.recorde_e1rm;
+      })(),
       registradas: item.registradas.length,
       planejadas: item.planejadas,
     };
@@ -109,6 +127,7 @@ export function resumoTreino(ficha) {
     tonelagem: total,
     variacao: variacao(totalComparavel, totalAnt),
     faltando: exercicios.reduce((t, e) => t + Math.max(e.planejadas - e.registradas, 0), 0),
+    prs: exercicios.filter((e) => e.pr).length,
     exercicios,
   };
 }
@@ -130,7 +149,13 @@ export function resumoHoje(db, alunoId) {
     const series = db.prepare('SELECT * FROM series_realizadas WHERE treino_id = ?').all(ultimo.id);
     ultimo.tonelagem = tonelagem(series);
   }
+  const analise = progressaoDoPrograma(db, p.id);
+  const checkinFeito = Boolean(db.prepare('SELECT 1 FROM checkins WHERE aluno_id = ? AND semana_iso = ?').get(alunoId, semanaIso(hojeLocal())));
+  const microAnalisado = analise.micros.filter((m) => m.treinos_feitos).at(-1) || null;
   return {
+    deload: analise.deload,
+    fadiga: microAnalisado && { microciclo: microAnalisado.microciclo, ...microAnalisado.fadiga },
+    checkin_pendente: !checkinFeito,
     programa: { id: prog.programa.id, nome: prog.programa.nome, n_microciclos: n },
     em_andamento: emAndamento,
     proximo: prox && (() => {

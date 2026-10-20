@@ -2,6 +2,7 @@
 import { api, sessao, ehAdmin } from '../api.js';
 import { icone } from '../icones.js';
 import { esc, aviso } from '../componentes.js';
+import { chipFadiga } from '../programa-ui.js';
 
 export const titulo = 'Hoje';
 
@@ -13,6 +14,49 @@ function quando(data) {
   return data.split('-').reverse().join('/');
 }
 const kg = (n) => `${Math.round(n).toLocaleString('pt-BR')} kg`;
+
+// Check-in semanal num diálogo: 5 notas de 1 a 5 (5 = melhor) + comentário
+async function abrirCheckin(depois) {
+  const { perguntas, atual } = await api('/checkins');
+  const notas = Object.fromEntries(perguntas.map((p) => [p.campo, atual?.[p.campo] ?? null]));
+  const dialogo = document.createElement('dialog');
+  dialogo.className = 'dialogo';
+  dialogo.innerHTML = `
+    <form class="form" method="dialog">
+      <h2>Check-in da semana</h2>
+      <p class="sub">De 1 a 5, como foi a sua semana? 5 é sempre o melhor.</p>
+      ${perguntas.map((p) => `
+        <div class="notas" data-pergunta="${p.campo}">
+          <span class="notas-rotulo">${esc(p.texto)}<small>1 = ${esc(p.baixo)} · 5 = ${esc(p.alto)}</small></span>
+          <div class="notas-botoes">${[1, 2, 3, 4, 5].map((n) => `<button type="button" data-nota="${n}" aria-pressed="${notas[p.campo] === n}" aria-label="${esc(p.texto)} ${n}">${n}</button>`).join('')}</div>
+        </div>`).join('')}
+      <label>Comentário (opcional)<textarea name="comentario" rows="2" maxlength="500">${esc(atual?.comentario || '')}</textarea></label>
+      <button type="submit" class="botao principal cheio">${icone('ok')}Salvar</button>
+      <button type="button" class="botao" data-fechar>Agora não</button>
+    </form>`;
+  document.body.append(dialogo);
+  dialogo.showModal();
+  dialogo.addEventListener('close', () => dialogo.remove());
+  dialogo.addEventListener('click', (ev) => {
+    if (ev.target.closest('[data-fechar]')) return dialogo.close();
+    const b = ev.target.closest('[data-nota]');
+    if (!b) return;
+    const campo = b.closest('[data-pergunta]').dataset.pergunta;
+    notas[campo] = Number(b.dataset.nota);
+    for (const x of b.parentElement.children) x.setAttribute('aria-pressed', String(x === b));
+  });
+  dialogo.querySelector('form').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const falta = perguntas.find((p) => notas[p.campo] == null);
+    if (falta) return aviso(`Escolha uma nota para ${falta.texto.toLowerCase()}.`, 'erro');
+    try {
+      await api('/checkins', { metodo: 'PUT', corpo: { ...notas, comentario: dialogo.querySelector('[name=comentario]').value } });
+      dialogo.close();
+      aviso('Check-in salvo.');
+      depois();
+    } catch (e) { aviso(e.message, 'erro'); }
+  });
+}
 
 export async function render(el) {
   const primeiroNome = sessao.usuario.nome.split(' ')[0];
@@ -58,8 +102,28 @@ export async function render(el) {
       </section>`;
   }
 
+  const deload = hoje.deload?.sugerir ? `
+    <section class="card alerta-card">
+      <h2>${icone('alerta')}Hora de pensar num deload</h2>
+      <p>${esc(hoje.deload.motivo)}</p>
+      <p class="sub">${esc(hoje.deload.como)}</p>
+    </section>` : '';
+  const fadiga = !hoje.deload?.sugerir && hoje.fadiga && ['baixa', 'moderada', 'alta'].includes(hoje.fadiga.nivel) ? `
+    <div class="lista-item">
+      ${icone('evolucao')}
+      <span class="texto">Micro ${hoje.fadiga.microciclo}: ${esc(hoje.fadiga.mensagem)}</span>
+      ${chipFadiga(hoje.fadiga)}
+    </div>` : '';
+  const checkin = hoje.checkin_pendente ? `
+    <button class="lista-item destaque" data-checkin>
+      ${icone('coracao')}
+      <span class="texto">Check-in da semana<small>5 notas rápidas: sono, energia, dor, estresse e dieta</small></span>
+      ${icone('seta')}
+    </button>` : '';
+
   el.innerHTML = `
     <h2 class="saudacao">Oi, ${esc(primeiroNome)}</h2>
+    ${deload}
     ${pendentes ? `
       <a class="lista-item destaque" href="#/alunos">
         ${icone('alunos')}
@@ -67,12 +131,16 @@ export async function render(el) {
         ${icone('seta')}
       </a>` : ''}
     ${principal}
+    ${checkin}
+    ${fadiga}
     ${hoje.ultimo ? `
       <a class="lista-item" href="#/treino/${hoje.ultimo.id}/resumo">
         ${icone('relogio')}
         <span class="texto">Último: Treino ${esc(hoje.ultimo.codigo)} · ${esc(hoje.ultimo.nome)}<small class="num">${quando(hoje.ultimo.data)} · ${kg(hoje.ultimo.tonelagem)}</small></span>
         ${icone('seta')}
       </a>` : ''}`;
+
+  el.querySelector('[data-checkin]')?.addEventListener('click', () => abrirCheckin(() => render(el)));
 
   for (const b of el.querySelectorAll('[data-comecar]')) {
     b.addEventListener('click', async () => {

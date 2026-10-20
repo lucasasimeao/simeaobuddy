@@ -3,7 +3,7 @@
 import { api } from '../api.js';
 import { icone } from '../icones.js';
 import { esc, aviso } from '../componentes.js';
-import { etiqueta, faixa, segundos, seletorExercicio } from '../programa-ui.js';
+import { etiqueta, faixa, segundos, seletorExercicio, chipStatus, varPct } from '../programa-ui.js';
 import { iniciarTimer, vibrar, parar } from '../timer.js';
 import { calcularFeeders } from '/js/treino/feeders.js';
 import { cargaBackoff } from '/js/treino/tonelagem.js';
@@ -125,6 +125,7 @@ async function ficha(tela, id) {
           <span>${icone('relogio')}${segundos(item.descanso_seg)}</span>
           <span class="progresso-ex">${feitas}/${linhas.length}</span>
         </div>
+        ${item.sugestao ? `<p class="sugestao">${icone('subir')}<span><b>Hoje:</b> ${esc(item.sugestao.texto)}</span></p>` : ''}
         ${dicas.length ? `<details class="dicas"><summary>Dicas e substitutos</summary><p>${dicas.map(esc).join('<br>')}</p>
           ${item.substitutos.length ? `<p class="sub">Na falta do aparelho: ${item.substitutos.map((s) => esc(s.nome)).join(', ')}</p>` : ''}</details>` : ''}
 
@@ -370,8 +371,8 @@ async function ficha(tela, id) {
 async function resumo(el, id) {
   const { treino, sessao, resumo: r } = await api(`/treinos/${id}/resumo`);
   const kg = (n) => `${Math.round(n).toLocaleString('pt-BR')} kg`;
-  const seta = (v) => (v == null ? '<span class="var neutra">primeira vez</span>'
-    : `<span class="var ${v > 0 ? 'subiu' : v < 0 ? 'caiu' : 'neutra'}">${v > 0 ? '▲' : v < 0 ? '▼' : '='} ${num(Math.abs(v))}%</span>`);
+  const seta = (v) => varPct(v, 'primeira vez');
+  const contagem = (st) => r.exercicios.filter((e) => e.status === st).length;
   el.innerHTML = `
     <section class="card resumo-topo">
       <p class="sobre">Treino ${esc(sessao.codigo)} · ${esc(sessao.nome)} · Micro ${treino.microciclo}</p>
@@ -379,15 +380,19 @@ async function resumo(el, id) {
       <p class="sub">tonelagem do treino ${seta(r.variacao)}</p>
       <div class="resumo-linha num"><span>${icone('relogio')}${r.duracao_min} min</span>
         ${r.faltando ? `<span class="aviso-texto">${r.faltando} ${r.faltando === 1 ? 'série ficou' : 'séries ficaram'} sem registro</span>` : '<span>Todas as séries registradas</span>'}</div>
+      ${r.exercicios.some((e) => e.status) ? `<div class="resumo-linha num">
+        <span>🟢 ${contagem('progrediu')}</span><span>🟡 ${contagem('manteve')}</span><span>🔴 ${contagem('regrediu')}</span>
+        ${r.prs ? `<span class="pr">${icone('trofeu')}${r.prs} ${r.prs === 1 ? 'recorde' : 'recordes'}</span>` : ''}</div>` : ''}
     </section>
     <section class="card">
       <h2>Por exercício</h2>
       <div class="lista">${r.exercicios.map((e) => `
         <div class="lista-item resumo-ex">
           <span class="texto">${esc(e.nome)}<small class="num">${e.registradas ? `${kg(e.tonelagem)} · ${e.reps} reps${e.carga != null ? ` · top ${num(e.carga)} kg` : ''}` : 'não registrado'}</small></span>
-          ${e.registradas ? seta(e.variacao) : ''}
+          ${e.registradas ? `<span class="estado">${chipStatus(e.status) || seta(e.variacao)}
+            ${e.status ? seta(e.variacao) : ''}${e.pr ? `<span class="pr">${icone('trofeu')}PR · e1RM ${num(e.e1rm)} kg</span>` : ''}</span>` : ''}
         </div>`).join('')}</div>
-      <p class="dica">Comparação com a última vez que você fez cada exercício. Os status 🟢🟡🔴 e a sugestão de carga chegam na próxima etapa.</p>
+      <p class="dica">Comparação com a última vez que você fez cada exercício. PR = melhor e1RM (kg × (1 + (reps + RIR) / 30)) que você já fez nele.</p>
     </section>
     ${treino.observacao ? `<section class="card"><h2>Observações</h2><p>${esc(treino.observacao)}</p></section>` : ''}
     <a class="botao principal cheio" href="#/hoje">Voltar para Hoje</a>

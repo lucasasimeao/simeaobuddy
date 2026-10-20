@@ -58,6 +58,7 @@ Detalhes em `docs/05` §Visual.
 - `instalar-atalhos.ps1`: cria os dois atalhos (`-Remover` tira). `parar.bat`: desliga o servidor escondido (necessário antes de atualizar o código).
 - `npm start`: sobe o servidor (porta 3100). Mostra o endereço para abrir no celular.
 - `npm test`: roda os testes (`node --test`, pasta `test/`).
-- `npm run seed`: cria/atualiza o banco de exemplo `data/exemplo.db` (nunca mexe no real).
+- `npm run seed`: cria/atualiza o banco de exemplo `data/exemplo.db` (nunca mexe no real): admin `exemplo` / senha `exemplo123` e a aluna "Ana Exemplo" com 5 microciclos registrados.
+- `testar-exemplo.bat`: desliga o servidor normal e liga o app no banco de exemplo (os .bat precisam de quebra de linha CRLF).
 - Usar o banco de exemplo: no PowerShell, `$env:DB_PATH="data/exemplo.db"; npm start`.
 - Banco real: `data/treino.db`. Migrações em `src/db/migracoes/NNN_nome.sql` (só aditivas), aplicadas sozinhas ao iniciar.

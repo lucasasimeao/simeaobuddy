@@ -242,5 +242,20 @@ export function validarSerie(s = {}, item) {
   const rir = numero(s.rir, 0, 10, 'RIR', true);
   if (rir.erro) return { erro: rir.erro };
   const uuid = vazio(s.uuid) ? null : String(s.uuid).slice(0, 64);
-  return { dados: { posicao, bloco, tipo, carga: carga.valor, reps: reps.valor, rir: rir.valor, uuid } };
+  // Sem RIR informado, fica o RIR planejado da série (usado no e1RM e na sugestão de carga)
+  return { dados: { posicao, bloco, tipo, carga: carga.valor, reps: reps.valor, rir: rir.valor ?? planejadas[posicao].rir ?? null, uuid } };
+}
+
+// --- Check-in semanal: as 5 notas de 1 a 5 são obrigatórias ---
+export function validarCheckin(c = {}, perguntas) {
+  const dados = {};
+  for (const p of perguntas) {
+    const n = numero(c[p.campo], 1, 5, p.texto, true);
+    if (n.erro || n.valor === null) return { erro: n.erro || `${p.texto}: escolha uma nota de 1 a 5.` };
+    dados[p.campo] = n.valor;
+  }
+  const comentario = texto(c.comentario, 500, 'Comentário');
+  if (comentario.erro) return { erro: comentario.erro };
+  dados.comentario = comentario.valor;
+  return { dados };
 }
