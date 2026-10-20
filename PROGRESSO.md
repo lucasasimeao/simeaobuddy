@@ -1,6 +1,6 @@
 # Progresso do app
 
-**Etapa atual:** 4, Ficha na academia (esperando o teste do Lucas). Código salvo num commit de ponto de parada, para continuar em outro PC; a etapa ainda não foi aprovada.
+**Etapa atual:** 5, Progressão, tonelagem e fadiga (a começar). Etapa 4 aprovada em 20/10/2026.
 
 | Etapa | Nome | Status | Data | Observações |
 |---|---|---|---|---|
@@ -8,7 +8,7 @@
 | 1 | Pessoas e login | ✅ | 17/10/2026 | Admin com senha, alunos com Google + aprovação, anamnese, permissões, Tailscale |
 | 2 | Biblioteca de exercícios | ✅ | 17/10/2026 | 180 exercícios (170 da planilha + 10 só das fichas), busca, filtro, edição |
 | 3 | Programa, escada e planilha | ✅ | 17/10/2026 | Modelo A–E com a escada, editor, contador por músculo, planilha (estrutura) |
-| 4 | Ficha na academia | 👀 | 17/10/2026 | Hoje (sequência), ficha completa, timer, troca, resumo, planilha com dados |
+| 4 | Ficha na academia | ✅ | 20/10/2026 | Hoje (sequência), ficha completa, timer, troca, resumo, planilha com dados |
 | 5 | Progressão, tonelagem e fadiga | ⬜ | | |
 | 6 | Corpo e gráficos | ⬜ | | |
 | 7 | Exportar Excel e backup | ⬜ | | |
