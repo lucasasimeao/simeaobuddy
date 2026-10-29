@@ -1,0 +1,22 @@
+{
+  "name": "simeaobuddy",
+  "version": "0.1.0",
+  "description": "App de treino low volume (PWA) do Lucas e amigos",
+  "private": true,
+  "type": "module",
+  "main": "server.js",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning server.js",
+    "test": "node --disable-warning=ExperimentalWarning --test",
+    "seed": "node --disable-warning=ExperimentalWarning src/db/seed.js",
+    "criar-admin": "node --disable-warning=ExperimentalWarning src/db/criar-admin.js"
+  },
+  "dependencies": {
+    "chart.js": "^4.4.7",
+    "exceljs": "^4.4.0",
+    "express": "^5.3.0"
+  }
+}

@@ -1,0 +1,15 @@
+node_modules/
+
+# Banco real e fotos: nunca vão para o git (backup é separado)
+data/
+
+.env
+*.log
+.DS_Store
+Thumbs.db
+logs/
+public/icone.ico
+
+# App Android: a chave de assinatura e os pacotes gerados não vão para o git (guarde a chave no backup)
+android/chave/
+android/pacote/
